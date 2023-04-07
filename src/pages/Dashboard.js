@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import Uploader from '../components/Uploader';
+import Uploader from '../components/form/Uploader';
 import TrackList from '../features/tracks/TrackList';
 import Folders from '../components/folder/Folders';
 import Sidebar from '../components/Sidebar';
-import EditTrackMeta from '../components/EditTrackMeta';
 import Search from '../components/form/Search';
 import { fetchAsyncArtists, fetchAsyncTracks } from '../features/tracks/trackSlice';
 

@@ -8,7 +8,8 @@ contextBridge.exposeInMainWorld("ipcRenderer",ipcRenderer);
 contextBridge.exposeInMainWorld('electronAPI',{
   saveTracks: {
     saveTracksToDB() {
-      ipcRenderer.invoke('upload-files');
+      console.log('sending to the database......')
+      ipcRenderer.send('upload-files', "sending Files to processing section");
     }
   },
   getTracks: {

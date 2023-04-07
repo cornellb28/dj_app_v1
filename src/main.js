@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const fsPromises = require('fs').promises;
 
-const { isDirectory, scanFolder, getAllTracks, loadFolders } = require('./helpers');
+const { isDirectory, isFile, scanFolder, scannedFiles, loadFolders } = require('./helpers');
 const isDev = process.env.NODE_DEV === 'development';
 const win = null;
 
@@ -85,10 +85,11 @@ ipcMain.on("files-dropped", async (event, args) => {
 })
 
 // Grabbing the folder or file path from user
-ipcMain.handle("upload-files", async (event, args) => {
+ipcMain.on("upload-files", async (event, args) => {
+  console.log(args)
   // lets give them the dialog to choose a folder
   const dialogButton = await dialog.showOpenDialog({
-    properties: ["openDirectory", "createDirectory", "openFile"],
+    properties: ["openDirectory", "createDirectory", "openFile", "multiSelections"],
   });
 
   // user selected cancel button to show selection process
@@ -97,11 +98,14 @@ ipcMain.handle("upload-files", async (event, args) => {
   // I should be looking for an array. here is my options
   const selectedPath = dialogButton?.filePaths;
 
-  // Is it a Directory | File?
-  if (selectedPath && isDirectory(selectedPath)) {
-    const [folderPath] = selectedPath;
-    const files = await scanFolder(folderPath);
+  const checkFiles = await isFile(selectedPath);
+  const checkFolders = isDirectory(selectedPath)
+
+  if (checkFiles) {
+    const processFiles  = await scannedFiles(selectedPath);
+    console.log(processFiles);
   }
+  return;
 });
 
 ipcMain.handle("getalltracks", async (event) => {

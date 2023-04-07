@@ -1,4 +1,5 @@
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
+import { promisify } from 'util';
 import path from 'path';
 import { glob } from "glob";
 const nodeID3 = require('node-id3');
@@ -13,47 +14,22 @@ const options = {
     noRaw: true
 }
 
-async function updateMetaData(tags, trackpath) {
-    // write new tags to file
-    const success = nodeID3.write(tags, trackpath);
-    // write tags to DB
-    prisma.$connect();
-    const dbwrite = await prisma.track.create({
-        data: {
-            createdAt: tags.createdAt,
-            title: tags.title,
-            bpm: tags.bpm,
-            artists: tags.artist,
-            album: tags.album,
-            initialKey: tags.initialKey,
-            year: tags.year,
-            comment: tags.comment,
-            bitrate: tags.bitrate,
-            updateDate: new Date().toISOString(),
-            contentGroups: tags.contentGroup,
-            pinned: tags.pinned,
-            like: tags.like,
-            genres: tags.genre,
-            composers: tags.composer,
-            remixArtists: tags.remixArtist,
-            moods: tags.mood,
-            timings: tags.timing,
-            location: trackpath,
-            plays: tags.plays
-        },
-
-    })
-    prisma.$disconnect();
-    console.log("success", success)
-    return success;
-
+// Get Extension
+export const getExtension = (filename) => {
+    return filename.split('.').pop();
 }
 
+// File Checker
+export const isFile = async (filepaths) => {
+    const stats = await Promise.all(filepaths.map((file) => fs.stat(file)));
+    return stats.every((stats) => stats.isFile());
+  }
+
 // Checks if the path is a Directory
-export const isDirectory = async (fileNames) => {
+export const isDirectory = (folderPath) => {
     let check = false;
-    for (let file of fileNames) {
-        let checkStatus = await fs.lstat(file, (err, stats) => {
+    for (let folder of folderPath) {
+        let checkStatus = fs.lstat(folder, (err, stats) => {
             return stats.isDirectory() === false ? false : true;
         })
 
@@ -63,16 +39,17 @@ export const isDirectory = async (fileNames) => {
     return check;
 };
 
+// Check if the Track exist in the Database
 const checkTrackExists = async (track) => {
     const trackExists = await prisma.track.findUnique({
         where: { location: track },
     });
 
     if (trackExists) {
-        // console.log(`Track with location "${t}" exists.`)
+        console.log(`Track with location "${track}" exists.`)
         return;
     } else {
-        // console.log(`Track with location "${t}" does not exist.`)
+        console.log(`Track with location "${track}" does not exist.`)
         return track;
     }
 };
@@ -122,6 +99,25 @@ export const scanFolder = async (data) => {
     const result = await scanSelectedFolder(data); // returns array of paths
     const final = await readFileData(result);
 };
+
+export const scannedFiles = async (data) => {
+    if(!data || data === undefined) return;
+
+    console.log("data: ", data)
+    
+    //const readFileAsync = promisify(fs.readFile);
+
+    const readFiles = async (array) => {
+        try {
+          const fileContents = await Promise.all(array.map((filePath) => fs.readFile(filePath, 'utf8')));
+          return fileContents;
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      
+      readFiles(data).then((fileContents) => console.log(fileContents.map(content => content.toString())));
+}
 
 
 
@@ -200,17 +196,6 @@ const SaveFilesToDB = async (tags, filepath) => {
 }
 
 
-// CRUD
-export const getAllTracks = async () => {
-    try {
-        prisma.$connect();
-        const tracks = await prisma.track.findMany();
-        return tracks;
-    } catch (error) {
-        console.log(error)
-    }
-}
-
 // This is pull all the folders that exist in the Database
 export const loadFolders = async () => {
     const categories = {};
@@ -231,12 +216,6 @@ export const loadFolders = async () => {
         console.log(error)
     }
 }
-
-
-
-
-
-
 
 // File Manager Functions
 async function movetrack(trackpaths) {
@@ -282,7 +261,38 @@ async function movetrack(trackpaths) {
 }
 
 
-// Global Funtions 
-export const getExtension = (filename) => {
-    return filename.split('.').pop();
+async function updateMetaData(tags, trackpath) {
+    // write new tags to file
+    const success = nodeID3.write(tags, trackpath);
+    // write tags to DB
+    prisma.$connect();
+    const dbwrite = await prisma.track.create({
+        data: {
+            createdAt: tags.createdAt,
+            title: tags.title,
+            bpm: tags.bpm,
+            artists: tags.artist,
+            album: tags.album,
+            initialKey: tags.initialKey,
+            year: tags.year,
+            comment: tags.comment,
+            bitrate: tags.bitrate,
+            updateDate: new Date().toISOString(),
+            contentGroups: tags.contentGroup,
+            pinned: tags.pinned,
+            like: tags.like,
+            genres: tags.genre,
+            composers: tags.composer,
+            remixArtists: tags.remixArtist,
+            moods: tags.mood,
+            timings: tags.timing,
+            location: trackpath,
+            plays: tags.plays
+        },
+
+    })
+    prisma.$disconnect();
+    console.log("success", success)
+    return success;
+
 }
