@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
-import { promisify } from 'util';
 import path from 'path';
 import { glob } from "glob";
-const nodeID3 = require('node-id3');
 import { createTrackMeta } from './createTrackMeta'
 //const musicMetadata = require('music-metadata');
 const { PrismaClient } = require('@prisma/client');
@@ -23,7 +21,7 @@ export const getExtension = (filename) => {
 export const isFile = async (filepaths) => {
     const stats = await Promise.all(filepaths.map((file) => fs.stat(file)));
     return stats.every((stats) => stats.isFile());
-  }
+}
 
 // Checks if the path is a Directory
 export const isDirectory = (folderPath) => {
@@ -41,18 +39,41 @@ export const isDirectory = (folderPath) => {
 
 // Check if the Track exist in the Database
 const checkTrackExists = async (track) => {
+    // Lets ceck to see if the uploaded file exist in the database already
     const trackExists = await prisma.track.findUnique({
         where: { location: track },
     });
 
+    // If The track exist......
+    // Do not return 
     if (trackExists) {
-        console.log(`Track with location "${track}" exists.`)
+        //console.log(`Track with location "${track}" exists.`)
         return;
     } else {
-        console.log(`Track with location "${track}" does not exist.`)
+        // track doesnt exist so lets return back for more work
+        //console.log(`Track with location "${track}" does not exist.`)
         return track;
     }
 };
+
+// Scan the Folder for all files
+const scanSelectedFolder = (d) => {
+    return new Promise((resolve, reject) => {
+        glob(`${d}/**/*.{m4a,mp3}`, (err, files) => {
+            resolve(files);
+        });
+    });
+};
+
+// // Read File MetaData
+const readFileData = async (data) => {
+    const obj = [];
+    data.forEach(async filepath => {
+        const metadata = await readTags(filepath);
+        obj.push(metadata);
+    });
+    console.log("obj List",obj)
+}
 
 const readTags = async (trackpath) => {
     // if the track exist in the db return undefined
@@ -64,62 +85,32 @@ const readTags = async (trackpath) => {
     // if the tags are limited, lets create a new tag with all the props
     // write to the file
     // write to the db if the write file was successful
-    if (newFileToAdd) {
-        const addTrackToDB = await createTrackMeta(newFileToAdd);
-        return addTrackToDB;
-        // console.log('created file meta and saved to db');
+    if (newFileToAdd && typeof string) {
+        // Get the MetaData for the track
+        const updatedTrackMeta = await createTrackMeta(newFileToAdd, options);
+        return updatedTrackMeta;
+        console.log('created file meta and saved to db');
     }
 }
-
-
 
 // Lets fetch the files from the folder you selected -->  []
-export const scanFolder = async (data) => {
+// We want to return all the files we found
+export const readFoldersData = async (data) => {
+    const result = [];
 
-    // Scan the Folder for all files
-    const scanSelectedFolder = (d) => {
-        return new Promise((resolve, reject) => {
-            glob(`${d}/**/*.{m4a,mp3}`, (err, files) => {
-                resolve(files);
-            });
-        });
-    };
-
-    // Read File MetaData
-    const readFileData = async (data) => {
-        const nestedFiles = [];
-        data.forEach(async filepath => {
-            const metadata = await readTags(filepath);
-            console.log("metadata", metadata)
-            const saveToDB = await SaveFilesToDB(metadata, filepath);
-            nestedFiles.push(metadata);
-        })
-        return nestedFiles;
+    for(let d of data) {
+        const scanDirectory = await scanSelectedFolder(d);
+        const getMetaData = await readFileData(scanDirectory);
+        result.push(...scanDirectory);
     }
-    const result = await scanSelectedFolder(data); // returns array of paths
-    const final = await readFileData(result);
+    return result
 };
 
-export const scannedFiles = async (data) => {
-    if(!data || data === undefined) return;
-
-    console.log("data: ", data)
-    
-    //const readFileAsync = promisify(fs.readFile);
-
-    const readFiles = async (array) => {
-        try {
-          const fileContents = await Promise.all(array.map((filePath) => fs.readFile(filePath, 'utf8')));
-          return fileContents;
-        } catch (err) {
-          console.error(err);
-        }
-      };
-      
-      readFiles(data).then((fileContents) => console.log(fileContents.map(content => content.toString())));
+export const scanFiles = async (tracks) => {
+    for (let track of tracks) {
+        console.log(track)
+    }
 }
-
-
 
 // THis function will pull the metadata and create an object for each
 const SaveFilesToDB = async (tags, filepath) => {

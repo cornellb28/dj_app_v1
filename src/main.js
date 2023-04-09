@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const fsPromises = require('fs').promises;
 
-const { isDirectory, isFile, scanFolder, scannedFiles, loadFolders } = require('./helpers');
+const { isDirectory, scanFiles, isFile, readFoldersData, loadFolders } = require('./helpers');
 const isDev = process.env.NODE_DEV === 'development';
 const win = null;
 
@@ -78,11 +78,11 @@ app.on('activate', () => {
 // code. You can also put them in separate files and import them here.
 
 // User dropped files in
-ipcMain.on("files-dropped", async (event, args) => {
-  console.log(args) //{ name: 'SERATOCOLLECTION', filepath: '/Volumes/MUSIKBUCKET/SERATOCOLLECTION' }
-  let p = args.filepath;
-  const getFiles = await scanFolder(p);
-})
+// ipcMain.on("files-dropped", async (event, args) => {
+//   console.log(args) //{ name: 'SERATOCOLLECTION', filepath: '/Volumes/MUSIKBUCKET/SERATOCOLLECTION' }
+//   let p = args.filepath;
+//   const getFiles = await scanFolder(p);
+// })
 
 // Grabbing the folder or file path from user
 ipcMain.on("upload-files", async (event, args) => {
@@ -98,14 +98,19 @@ ipcMain.on("upload-files", async (event, args) => {
   // I should be looking for an array. here is my options
   const selectedPath = dialogButton?.filePaths;
 
-  const checkFiles = await isFile(selectedPath);
+  // Check if track is folder or file
+  // const checkFiles = await isFile(selectedPath);
   const checkFolders = isDirectory(selectedPath)
 
-  if (checkFiles) {
-    const processFiles  = await scannedFiles(selectedPath);
-    console.log(processFiles);
+  // if (checkFiles) {
+  //   const processedFiles  = await scanFiles(selectedPath);
+  //   console.log(processFiles);
+  // }
+
+  if(checkFolders) {
+    const processedFolders  = await readFoldersData(selectedPath);
+    console.log(processedFolders);
   }
-  return;
 });
 
 ipcMain.handle("getalltracks", async (event) => {
