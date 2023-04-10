@@ -20,6 +20,8 @@ const track = {
 
 // Create a new object with the updated artist property
 const updatedTrack = { ...track, artist: "Kendrick Lamar" };
+// Concat a string
+track.artist = track.artist + " feat. Big Sean";
 
 console.log("Original track:", track);
 console.log("Updated track:", updatedTrack);
