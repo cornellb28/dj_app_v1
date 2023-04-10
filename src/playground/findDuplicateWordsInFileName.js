@@ -7,6 +7,6 @@ function findDuplicateWordsInFileName(fileName) {
   return matches ? matches.join(", ") : "";
 }
 
-const fileName = "file_name_with_duplicate_words.txt";
+const fileName = "file_name_with_duplicate_words_words_file.txt";
 const duplicates = findDuplicateWordsInFileName(fileName);
-console.log(duplicates);
+console.log("Dups: ",duplicates);
