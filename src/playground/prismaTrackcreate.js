@@ -85,3 +85,44 @@ console.log('Before:', track);
 const updatedObject = updateTrackData(track, 'bpm', 99);
 
 console.log('Before:', track);
+
+
+
+
+
+
+// track and trackAttribute
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function createTrack() {
+  const track = await prisma.track.create({
+    data: {
+      name: 'My New Track',
+      description: 'This is my new track!',
+      attributes: {
+        create: [
+          {
+            name: 'Attribute 1',
+            value: 'Value 1',
+          },
+          {
+            name: 'Attribute 2',
+            value: 'Value 2',
+          },
+        ],
+      },
+    },
+    include: {
+      attributes: true,
+    },
+  });
+
+  console.log(`Created track: ${JSON.stringify(track, null, 2)}`);
+}
+
+createTrack()
+  .catch((e) => console.error(e))
+  .finally(async () => await prisma.$disconnect());
+
