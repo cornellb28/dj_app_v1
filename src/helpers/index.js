@@ -16,13 +16,11 @@ const options = {
 export const getExtension = (filename) => {
     return filename.split('.').pop();
 }
-
 // File Checker
 export const isFile = async (filepaths) => {
     const stats = await Promise.all(filepaths.map((file) => fs.stat(file)));
     return stats.every((stats) => stats.isFile());
 }
-
 // Checks if the path is a Directory
 export const isDirectory = (folderPath) => {
     let check = false;
@@ -36,7 +34,6 @@ export const isDirectory = (folderPath) => {
     }
     return check;
 };
-
 // Check if the Track exist in the Database
 const checkTrackExists = async (track) => {
     // Lets ceck to see if the uploaded file exist in the database already
@@ -55,7 +52,6 @@ const checkTrackExists = async (track) => {
         return track;
     }
 };
-
 // Scan the Folder for all files
 const scanSelectedFolder = (d) => {
     return new Promise((resolve, reject) => {
@@ -64,16 +60,14 @@ const scanSelectedFolder = (d) => {
         });
     });
 };
-
 // // Read File MetaData
-const readFileData = async (data) => {
-    const obj = [];
-    data.forEach(async filepath => {
-        const metadata = await readTags(filepath);
-        obj.push(metadata);
-    });
-    console.log("obj List",obj)
-}
+async function designMetaTags(data) {
+    console.log(data)
+    const metadataPromises = data.map(readTags);
+    const metadata = await Promise.all(metadataPromises);
+    const obj = metadata.filter(tag => tag != null);
+  }
+
 
 const readTags = async (trackpath) => {
     // if the track exist in the db return undefined
@@ -85,33 +79,12 @@ const readTags = async (trackpath) => {
     // if the tags are limited, lets create a new tag with all the props
     // write to the file
     // write to the db if the write file was successful
-    if (newFileToAdd && typeof string) {
+    if (newFileToAdd) {
         // Get the MetaData for the track
         const updatedTrackMeta = await createTrackMeta(newFileToAdd, options);
         return updatedTrackMeta;
-        console.log('created file meta and saved to db');
     }
 }
-
-// Lets fetch the files from the folder you selected -->  []
-// We want to return all the files we found
-export const readFoldersData = async (data) => {
-    const result = [];
-
-    for(let d of data) {
-        const scanDirectory = await scanSelectedFolder(d);
-        const getMetaData = await readFileData(scanDirectory);
-        result.push(...scanDirectory);
-    }
-    return result
-};
-
-export const scanFiles = async (tracks) => {
-    for (let track of tracks) {
-        console.log(track)
-    }
-}
-
 // THis function will pull the metadata and create an object for each
 const SaveFilesToDB = async (tags, filepath) => {
     try {
@@ -185,8 +158,6 @@ const SaveFilesToDB = async (tags, filepath) => {
         return error;
     }
 }
-
-
 // This is pull all the folders that exist in the Database
 export const loadFolders = async () => {
     const categories = {};
@@ -207,7 +178,6 @@ export const loadFolders = async () => {
         console.log(error)
     }
 }
-
 // File Manager Functions
 async function movetrack(trackpaths) {
     try {
@@ -250,8 +220,6 @@ async function movetrack(trackpaths) {
         return false;
     }
 }
-
-
 async function updateMetaData(tags, trackpath) {
     // write new tags to file
     const success = nodeID3.write(tags, trackpath);
@@ -286,4 +254,28 @@ async function updateMetaData(tags, trackpath) {
     console.log("success", success)
     return success;
 
+}
+
+
+
+
+
+// Lets fetch the files from the folder you selected -->  []
+// We want to return all the files we found
+export const readFoldersData = async (data) => {
+    const result = [];
+
+    for(let d of data) {
+        const scanDirectory = await scanSelectedFolder(d);
+        const getMetaData = await designMetaTags(scanDirectory);
+        console.log("getMetaData", getMetaData)
+        result.push(...getMetaData);
+    }
+    return result
+};
+
+export const scanFiles = async (tracks) => {
+    for (let track of tracks) {
+        console.log(track)
+    }
 }
