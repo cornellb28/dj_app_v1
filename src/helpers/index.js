@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'path';
 import { glob } from "glob";
+import _ from 'lodash';
 import { createTrackMeta } from './createTrackMeta'
 //const musicMetadata = require('music-metadata');
 const { PrismaClient } = require('@prisma/client');
@@ -61,13 +62,13 @@ const scanSelectedFolder = (d) => {
     });
 };
 // // Read File MetaData
-async function designMetaTags(data) {
-    console.log(data)
+const designMetaTags = async (data) => {
     const metadataPromises = data.map(readTags);
-    const metadata = await Promise.all(metadataPromises);
-    const obj = metadata.filter(tag => tag != null);
+    const results = await Promise.allSettled(metadataPromises);
+    const fulfilledResults = results.filter(result => result.status === 'fulfilled');
+    const values = fulfilledResults.map(result => result.value);
+    return values
   }
-
 
 const readTags = async (trackpath) => {
     // if the track exist in the db return undefined
@@ -178,6 +179,30 @@ export const loadFolders = async () => {
         console.log(error)
     }
 }
+
+// Lets fetch the files from the folder you selected -->  []
+// We want to return all the files we found
+export const readFoldersData = async (folderData) => {
+    let totalList = []
+    let result = [];
+
+    for(let folder of folderData) {
+        const scanDirectory = await scanSelectedFolder(folder);
+        for(let file of scanDirectory) {
+            totalList.push(file);
+        }
+    }
+    const getMetaData = await designMetaTags(totalList);
+    result = getMetaData;
+    return result
+};
+
+export const scanFiles = async (tracks) => {
+    for (let track of tracks) {
+        console.log(track)
+    }
+}
+
 // File Manager Functions
 async function movetrack(trackpaths) {
     try {
@@ -254,28 +279,4 @@ async function updateMetaData(tags, trackpath) {
     console.log("success", success)
     return success;
 
-}
-
-
-
-
-
-// Lets fetch the files from the folder you selected -->  []
-// We want to return all the files we found
-export const readFoldersData = async (data) => {
-    const result = [];
-
-    for(let d of data) {
-        const scanDirectory = await scanSelectedFolder(d);
-        const getMetaData = await designMetaTags(scanDirectory);
-        console.log("getMetaData", getMetaData)
-        result.push(...getMetaData);
-    }
-    return result
-};
-
-export const scanFiles = async (tracks) => {
-    for (let track of tracks) {
-        console.log(track)
-    }
 }

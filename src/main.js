@@ -84,9 +84,8 @@ app.on('activate', () => {
 //   const getFiles = await scanFolder(p);
 // })
 
-// Grabbing the folder or file path from user
-ipcMain.on("upload-files", async (event, args) => {
-  console.log(args)
+// Activates the Dialog when I need it
+async function activateDialog() {
   // lets give them the dialog to choose a folder
   const dialogButton = await dialog.showOpenDialog({
     properties: ["openDirectory", "createDirectory", "openFile", "multiSelections"],
@@ -96,27 +95,39 @@ ipcMain.on("upload-files", async (event, args) => {
   if (dialogButton.canceled) return;
 
   // I should be looking for an array. here is my options
-  const selectedPath = dialogButton?.filePaths;
+  const p = dialogButton?.filePaths;
 
-  // Check if track is folder or file
-  // const checkFiles = await isFile(selectedPath);
+  return p
+}
+
+async function readDirectory() {
+  // for Directories only
   const checkFolders = isDirectory(selectedPath)
-
-  // if (checkFiles) {
-  //   const processedFiles  = await scanFiles(selectedPath);
-  //   console.log(processFiles);
-  // }
-
-  if(checkFolders) {
-    const processedFolders  = await readFoldersData(selectedPath);
-    console.log(processedFolders);
+  if (checkFolders) {
+    const processedFolders = await readFoldersData(selectedPath);
+    console.log("processedFolders", processedFolders)
   }
-});
-
-ipcMain.handle("getalltracks", async (event) => {
-  return await getAllTracks();
-});
+}
 
 ipcMain.handle("getFolders", async (event) => {
   return await loadFolders();
 });
+
+// Grabbing the folder or file path from user
+ipcMain.on("upload-files", async (event, args) => {
+
+  const selectedPath = await activateDialog();
+
+
+});
+
+
+
+
+
+
+
+
+
+
+
