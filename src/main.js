@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const fsPromises = require('fs').promises;
 
-const { isDirectory, scanFiles, isFile, readFoldersData, loadFolders } = require('./helpers');
+const { isDirectory, scanFiles, isFile, readFoldersData, loadFolders, SaveFilesToDB } = require('./helpers');
 const isDev = process.env.NODE_DEV === 'development';
 const win = null;
 
@@ -96,7 +96,6 @@ async function activateDialog() {
 
   // I should be looking for an array. here is my options
   const p = dialogButton?.filePaths;
-
   return p
 }
 
@@ -116,9 +115,12 @@ ipcMain.handle("getFolders", async (event) => {
 // Grabbing the folder or file path from user
 ipcMain.on("upload-files", async (event, args) => {
 
+  // Get the folderPath and get all the meta tags
   const selectedPath = await activateDialog();
+  const getMetaDataArray = await readFoldersData(selectedPath);
+  const saveToDB = await SaveFilesToDB(getMetaDataArray);
 
-
+  return;
 });
 
 

@@ -63,12 +63,13 @@ const scanSelectedFolder = (d) => {
 };
 // // Read File MetaData
 const designMetaTags = async (data) => {
+
     const metadataPromises = data.map(readTags);
     const results = await Promise.allSettled(metadataPromises);
     const fulfilledResults = results.filter(result => result.status === 'fulfilled');
     const values = fulfilledResults.map(result => result.value);
     return values
-  }
+}
 
 const readTags = async (trackpath) => {
     // if the track exist in the db return undefined
@@ -84,79 +85,6 @@ const readTags = async (trackpath) => {
         // Get the MetaData for the track
         const updatedTrackMeta = await createTrackMeta(newFileToAdd, options);
         return updatedTrackMeta;
-    }
-}
-// THis function will pull the metadata and create an object for each
-const SaveFilesToDB = async (tags, filepath) => {
-    try {
-        prisma.$connect();
-        console.log('.....connecting to DB');
-
-        const saveFile = await prisma.track.create({
-            data: {
-                location: filepath,
-                attributes: {
-                    create: [
-                        {
-                            name: "title",
-                            value: tags.title
-                        },
-                        {
-                            name: "year",
-                            value: tags.year
-                        },
-                        {
-                            name: "length",
-                            value: tags.length
-                        },
-                        {
-                            name: "bpm",
-                            value: tags.bpm
-                        },
-                        {
-                            name: 'like',
-                            value: false
-                        },
-                        {
-                            name: "pinned",
-                            value: false
-                        },
-                        {
-                            name: "initialKey",
-                            value: tags.initialKey
-                        },
-                        {
-                            name: "bitrate",
-                            value: tags.bitrate
-                        },
-                        {
-                            name: "length",
-                            value: tags.length
-                        },
-                        {
-                            name: "album",
-                            value: tags.album
-                        },
-                        {
-                            name: "size",
-                            value: tags.size
-                        },
-                        {
-                            name: "plays",
-                            value: "0"
-                        },
-                        {
-                            name: "fileType",
-                            value: tags.fileType
-                        }
-                    ]
-                }
-            }
-        });
-        console.log('end connection DB');
-    } catch (error) {
-        console.log(error)
-        return error;
     }
 }
 // This is pull all the folders that exist in the Database
@@ -186,9 +114,9 @@ export const readFoldersData = async (folderData) => {
     let totalList = []
     let result = [];
 
-    for(let folder of folderData) {
+    for (let folder of folderData) {
         const scanDirectory = await scanSelectedFolder(folder);
-        for(let file of scanDirectory) {
+        for (let file of scanDirectory) {
             totalList.push(file);
         }
     }
@@ -279,4 +207,55 @@ async function updateMetaData(tags, trackpath) {
     console.log("success", success)
     return success;
 
+}
+
+
+
+// THis function will pull the metadata and create an object for each
+export const SaveFilesToDB = async (items) => {
+    console.log(items)
+    try {
+        prisma.$connect();
+        console.log('.....connecting to DB');
+
+        // Create a new track
+        const addTracks = await prisma.track.createMany({
+            data: items.map(item => ({
+                location: item.location,
+                trackAttributes: {
+                    create: [
+                        {
+                            name: "bpm",
+                            value: item.bpm
+                        },
+                        {
+                            name: "size",
+                            value: item.size
+                        },
+                        {
+                            name: "contentGroup",
+                            value: item.contentGroup
+                        },
+                        {
+                            name: "year",
+                            value: item.year
+                        },
+                        {
+                            name: "genre",
+                            value: item.genre
+                        }
+                    ]
+                }
+            })),
+            include: {
+                trackAttributes: true
+            }
+        })
+        console.log('end connection DB');
+    } catch (error) {
+        console.log(error)
+        return error;
+    } finally {
+        await prisma.$disconnect();
+    }
 }

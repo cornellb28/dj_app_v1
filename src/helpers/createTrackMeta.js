@@ -15,17 +15,16 @@ export const createTrackMeta = async (trackpath, options) => {
             "remixerArtist",
             "year",
             "publisher",
-            "fileType",
             "length",
-            "image",
             "composer",
             "artist",
             "size",
             "album",
-            "comment"
+            "comment",
         ];
 
-        const updatedMeta = addMissingProperties(defaultList, tags);
+        const updatedMeta = addMissingProperties(defaultList, tags, trackpath, imagetag);
+
         return updatedMeta
     } catch (error) {
         console.error(error);
@@ -35,7 +34,15 @@ export const createTrackMeta = async (trackpath, options) => {
 };
 
 
-function addMissingProperties(properties, obj) {
+function addMissingProperties(properties, obj, location, image) {
+    const filename = getExtension(location);
+    const imageObj = image;
+
+    // Add filename and imageObj properties to the object
+    obj.fileType = filename;
+    obj.image = imageObj;
+    obj.location = location
+
     for (let property of properties) {
         if (!obj.hasOwnProperty(property)) {
             obj[property] = `default ${property}`; // Add the missing property with a default value of null
