@@ -1,18 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import TrackApi from '../../commons/apis/TrackApi';
 
 export const fetchAsyncTracks = createAsyncThunk('tracks/fetchAsyncTracks', async () => {
-  const response = await TrackApi.get('/api/tracks');
   return response.data;
 })
 
 export const fetchAsyncArtists = createAsyncThunk('tracks/fetchAsyncArtists', async () => {
-  const response = await TrackApi.get('/api/artists');
   return response.data;
 })
 
 export const fetchAsyncTrackDetail = createAsyncThunk('tracks/fetchAsyncTrackDetail', async (id) => {
-  const response = await TrackApi.get(`/api/tracks/${id}`);
   return response.data;
 })
 

@@ -11,29 +11,29 @@ datasource db {
 }
 
 // Track
-// Track can have many genres, labels, comments, contentGroups
+// Track can have many genres, labels, comments, contentGroups, artists, playlists
 model Track {
-  id              Int                @id @default(autoincrement())
-  createdAt       DateTime           @default(now())
-  location        String             @unique
-  updateDate      DateTime           @updatedAt
-  moods           MoodToTrack[]
-  timings         TimingToTrack[]
-  comment         CommentToTrack[]
-  remixArtists    RemixerToTrack[]
-  publishers      PublisherToTrack[]
-  artists         ArtistToTrack[]
-  trackAttributes TrackAttribute?
-  genres          GenreToTrack[]
-  groupToTrack    GroupToTrack[]
-  ComposerToTrack ComposerToTrack[]
-  playlist        PlaylistOnTrack[]
+  id             Int                @id @default(autoincrement())
+  createdAt      DateTime           @default(now())
+  location       String             @unique
+  updateDate     DateTime           @updatedAt
+  fileType       String?
+  size           String
+  artists        ArtistsOnTrack[]
+  genres         GenreToTrack[]
+  publishers     PublisherToTrack[]
+  GroupToTrack   GroupToTrack[]
+  CommentToTrack CommentToTrack[]
+  playlists      PlaylistOnTrack[]
+  moods          MoodsToTrack[]
+  trackAttribute TrackAttribute?
 
   @@unique([id, location])
 }
 
 model TrackAttribute {
   id         Int     @id @default(autoincrement())
+  bpm        String?
   like       Boolean
   pinned     Boolean
   year       String?
@@ -42,129 +42,113 @@ model TrackAttribute {
   initialKey String?
   bitrate    Int?
   length     String?
-  fileType   String?
   title      String?
 
-  track   Track   @relation(fields: [trackId], references: [id])
-  trackId Int     @unique
-  size    Int
-  bpm     String?
+  track   Track @relation(fields: [trackId], references: [id])
+  trackId Int   @unique
 }
 
-// Artist
+// Artist & ArtistsOnTrack
+// Artist can have many tracks, genres, labels, composers, groups
 model Artist {
-  id     Int             @id @default(autoincrement())
-  name   String?         @unique
-  tracks ArtistToTrack[]
+  id        Int                @id @default(autoincrement())
+  name      String?            @unique
+  tracks    ArtistsOnTrack[]
+  genres    ArtistToGenre[]
 }
 
-model ArtistToTrack {
-  id       Int    @id @default(autoincrement())
-  artist   Artist @relation(fields: [artistId], references: [id])
-  artistId Int
+// ArtistsOnTrack
+model ArtistsOnTrack {
   track    Track  @relation(fields: [trackId], references: [id])
   trackId  Int
+  artistId Int
+  artist   Artist @relation(fields: [artistId], references: [id])
+
+  @@id([trackId, artistId])
 }
 
-// Genre
+// Genre & GenreToTrack
 model Genre {
-  id     Int            @id @default(autoincrement())
-  name   String         @unique
-  tracks GenreToTrack[]
+  id      Int             @id @default(autoincrement())
+  name    String          @unique
+  tracks  GenreToTrack[]
+  artists ArtistToGenre[]
+}
+
+model ArtistToGenre {
+  artist   Artist @relation(fields: [artistId], references: [id])
+  artistId Int
+  genreId  Int
+  genre    Genre  @relation(fields: [genreId], references: [id])
+
+  @@id([artistId, genreId])
 }
 
 model GenreToTrack {
-  id      Int   @id @default(autoincrement())
-  genre   Genre @relation(fields: [genreId], references: [id])
-  genreId Int
   track   Track @relation(fields: [trackId], references: [id])
   trackId Int
+  genreId Int
+  genre   Genre @relation(fields: [genreId], references: [id])
+
+  @@id([trackId, genreId])
 }
 
 // Label
 model Publisher {
-  id               Int                @id @default(autoincrement())
-  name             String             @unique
-  PublisherToTrack PublisherToTrack[]
+  id     Int                @id @default(autoincrement())
+  name   String             @unique
+  tracks PublisherToTrack[]
 }
 
 model PublisherToTrack {
-  id          Int       @id @default(autoincrement())
   publisher   Publisher @relation(fields: [publisherId], references: [id])
   publisherId Int
   track       Track     @relation(fields: [trackId], references: [id])
   trackId     Int
+
+  @@id([trackId, publisherId])
 }
 
 // Grouping
 model Group {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  GroupToTrack GroupToTrack[]
+  id     Int            @id @default(autoincrement())
+  name   String         @unique
+  groups GroupToTrack[]
 }
 
 model GroupToTrack {
-  id      Int   @id @default(autoincrement())
   group   Group @relation(fields: [groupId], references: [id])
   groupId Int
   track   Track @relation(fields: [trackId], references: [id])
   trackId Int
-}
 
-// composer
-model Composer {
-  id              Int               @id @default(autoincrement())
-  name            String            @unique
-  ComposerToTrack ComposerToTrack[]
-}
-
-model ComposerToTrack {
-  id         Int      @id @default(autoincrement())
-  composer   Composer @relation(fields: [composerId], references: [id])
-  composerId Int
-  track      Track    @relation(fields: [trackId], references: [id])
-  trackId    Int
-}
-
-// Remixer
-model Remixer {
-  id             Int              @id @default(autoincrement())
-  name           String           @unique
-  RemixerToTrack RemixerToTrack[]
-}
-
-model RemixerToTrack {
-  id        Int     @id @default(autoincrement())
-  remixer   Remixer @relation(fields: [remixerId], references: [id])
-  remixerId Int
-  track     Track   @relation(fields: [trackId], references: [id])
-  trackId   Int
+  @@id([trackId, groupId])
 }
 
 // comments
 model Comment {
-  id   Int    @id
-  name String @unique
-
-  CommentToTrack CommentToTrack[]
+  id     Int              @id
+  name   String           @unique
+  tracks CommentToTrack[]
 }
 
 model CommentToTrack {
-  id        Int     @id @default(autoincrement())
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int
   track     Track   @relation(fields: [trackId], references: [id])
   trackId   Int
+
+  @@id([trackId, commentId])
 }
 
 model Playlist {
-  id              Int               @id @default(autoincrement())
-  name            String            @unique
-  PlaylistOnTrack PlaylistOnTrack[]
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  like             Boolean
+  tracks           PlaylistOnTrack[]
 }
 
 model PlaylistOnTrack {
-  id         Int      @id @default(autoincrement())
   playlist   Playlist @relation(fields: [playlistId], references: [id])
   playlistId Int
   track      Track    @relation(fields: [trackId], references: [id])
@@ -174,30 +158,16 @@ model PlaylistOnTrack {
 }
 
 model Mood {
-  id          Int           @id @default(autoincrement())
-  name        String        @unique
-  MoodToTrack MoodToTrack[]
+  id     Int            @id @default(autoincrement())
+  name   String         @unique
+  tracks MoodsToTrack[]
 }
 
-model MoodToTrack {
-  id      Int   @id @default(autoincrement())
+model MoodsToTrack {
   mood    Mood  @relation(fields: [moodId], references: [id])
   moodId  Int
   track   Track @relation(fields: [trackId], references: [id])
   trackId Int
-}
 
-model Timing {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
-  TimingToTrack TimingToTrack[]
-}
-
-model TimingToTrack {
-  id       Int    @id @default(autoincrement())
-  timing   Timing @relation(fields: [timingId], references: [id])
-  timingId Int
-  track    Track  @relation(fields: [trackId], references: [id])
-  trackId  Int
+  @@unique([moodId, trackId])
 }

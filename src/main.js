@@ -1,5 +1,4 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
-const router = require('./commons/server/expressRoute');
 const { default: installExtension, REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS } = require("electron-devtools-installer");
 const path = require('path');
 const fs = require('fs-extra');
@@ -44,17 +43,6 @@ const createWindow = async () => {
     console.log(`Added extension: ${name}`);
   }).catch(err => console.log(err));
 };
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', () => {
-  // Start Server
-  router.listen(4000, () => {
-    console.log('Express app listening on port 9000!');
-  });
-  createWindow;
-});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
